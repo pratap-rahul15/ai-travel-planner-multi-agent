@@ -812,7 +812,7 @@ def render_hotel_cards(hotel_text):
 
     for line in hotel_lines[:6]:
 
-        st.markdown(f"""
+        card = f"""
         <div class='hotel-card'>
 
             <div class='hotel-title'>
@@ -829,10 +829,17 @@ def render_hotel_cards(hotel_text):
             </div>
 
         </div>
-        """, unsafe_allow_html=True)
+        """
 
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown(
+            card,
+            unsafe_allow_html=True
+        )
 
+    st.markdown(
+        "</div>",
+        unsafe_allow_html=True
+    )
 
 
 DESTINATIONS = [
@@ -1075,35 +1082,74 @@ if generate:
 
         tabs = st.tabs(["✈ Flights", "🏨 Hotels", "🗓 Itinerary", "🧠 Final Plan"])
 
-        with tabs[0]:
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.markdown(collected["flight_results"] or "No flights found.")
-            st.markdown("</div>", unsafe_allow_html=True)
-
         
+        with tabs[0]:
+            st.markdown(
+            "<div class='glass-card'>",
+            unsafe_allow_html=True
+        )
+
+            st.markdown(
+            collected["flight_results"] or "No flights found."
+        )
+
+            st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+
         with tabs[1]:
 
             st.markdown(
             "<div class='sec-head'><span>🏨 Recommended Hotels</span></div>",
             unsafe_allow_html=True,
-    )
+        )
+
+            st.markdown(
+            "<div class='hotel-grid'>",
+            unsafe_allow_html=True
+        )
 
             render_hotel_cards(
             collected["hotel_results"]
-    )
+        )
+
+            st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
 
 
         with tabs[2]:
+
             st.markdown(
-                "<div class='sec-head'><span>🗓️ AI Generated Travel Timeline</span></div>",
-                unsafe_allow_html=True,
-            )
-            render_itinerary_timeline(collected["itinerary"])
+            "<div class='sec-head'><span>🗓️ AI Generated Travel Timeline</span></div>",
+            unsafe_allow_html=True,
+        )
+
+            render_itinerary_timeline(
+            collected["itinerary"]
+        )
+
 
         with tabs[3]:
-            st.markdown("<div class='final-card'>", unsafe_allow_html=True)
-            st.markdown(collected["final_response"] or "No final response.")
-            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown(
+            "<div class='final-card'>",
+            unsafe_allow_html=True
+        )
+
+            st.markdown(
+            collected["final_response"] or "No final response."
+        )
+
+            st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"travel_plan_{timestamp}.md"
