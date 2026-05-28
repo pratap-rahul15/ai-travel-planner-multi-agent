@@ -235,7 +235,7 @@ div[data-testid="stDownloadButton"] > button {
 
 .hero-stat {
     background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.60);
     backdrop-filter: blur(14px);
     border-radius: 14px;
     min-width: 140px;
@@ -478,52 +478,109 @@ button[kind="header"]:hover {
 }
 
 
+
 section[data-testid="stSidebar"] p,
 section[data-testid="stSidebar"] span,
 section[data-testid="stSidebar"] label {
+    color: #dbeafe !important;
+}
+
+
+
+/* Hotel cards */
+
+.hotel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.hotel-card {
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 1rem;
+    backdrop-filter: blur(16px);
+    transition: all 0.25s ease;
+    box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+}
+
+.hotel-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(58,123,213,0.45);
+    box-shadow: 0 16px 28px rgba(0,0,0,0.28);
+}
+
+.hotel-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.7rem;
+}
+
+.hotel-badge {
+    display: inline-block;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(58,123,213,0.18);
+    color: #8fc4ff;
+    font-size: 0.72rem;
+    margin-right: 0.4rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid rgba(58,123,213,0.28);
+}
+
+.hotel-desc {
+    color: #cfe2f4;
+    line-height: 1.7;
+    font-size: 0.9rem;
+}
+
 </style>
 """,
     unsafe_allow_html=True,
 )
 
+
 with st.sidebar:
-    st.markdown("<div class='sidebar-title'>🌍 AI Travel Copilot</div>", unsafe_allow_html=True)
-    st.markdown("---")
 
-    if "thread_id" not in st.session_state:
-        st.session_state["thread_id"] = "Rahul Pratap Singh"
-
-    thread_id = st.text_input(
-        "👤 User ID",
-        value=st.session_state["thread_id"],
-        help="Your session ID — keeps travel history across queries",
+    st.markdown(
+        """
+        <style>
+        section[data-testid="stSidebar"] > div:first-child {
+            padding-top: 0rem;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
-    st.session_state["thread_id"] = thread_id
 
-    st.markdown("<div class='sidebar-title'>Powered by</div>", unsafe_allow_html=True)
-    for tech in [
-        "🔗 LangGraph",
-        "🧠 Groq · Llama 3.3 70B",
-        "🐘 PostgreSQL",
-        "🔍 Tavily Search",
-        "✈️ AviationStack",
-    ]:
-        st.markdown(f"<div class='sidebar-chip'>{tech}</div>", unsafe_allow_html=True)
-
-    st.markdown("<div class='sidebar-title'>Agent Pipeline</div>", unsafe_allow_html=True)
-    for step in ["① Flight Agent", "② Hotel Agent", "③ Itinerary Agent", "④ Final Agent"]:
-        st.markdown(f"<div class='sidebar-chip'>{step}</div>", unsafe_allow_html=True)
-
-    st.markdown("<div class='sidebar-title'>Workspace</div>", unsafe_allow_html=True)
     page = option_menu(
         menu_title=None,
-        options=["Plan Trip", "Saved Trips", "Analytics", "About"],
-        icons=["airplane", "bookmark-heart", "bar-chart", "info-circle"],
+        options=[
+            "Plan Trip",
+            "Saved Trips",
+            "Analytics",
+            "About"
+        ],
+        icons=[
+            "airplane",
+            "bookmark-heart",
+            "bar-chart",
+            "info-circle"
+        ],
         default_index=0,
         orientation="vertical",
         styles={
-            "container": {"padding": "0", "background-color": "transparent"},
-            "icon": {"color": "#8fbdf2", "font-size": "16px"},
+            "container": {
+                "padding": "0",
+                "background-color": "transparent"
+            },
+            "icon": {
+                "color": "#8fbdf2",
+                "font-size": "16px"
+            },
             "nav-link": {
                 "font-size": "14px",
                 "text-align": "left",
@@ -537,6 +594,131 @@ with st.sidebar:
             },
         },
     )
+
+    st.markdown(
+        "<div class='sidebar-title'>🌍 AI Travel Copilot</div>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown("---")
+
+    if "thread_id" not in st.session_state:
+        st.session_state["thread_id"] = "Rahul Pratap Singh"
+
+    thread_id = st.text_input(
+        "👤 User ID",
+        value=st.session_state["thread_id"],
+        help="Your session ID — keeps travel history across queries",
+    )
+
+    st.session_state["thread_id"] = thread_id
+
+    st.markdown(
+        "<div class='sidebar-title'>Powered by</div>",
+        unsafe_allow_html=True
+    )
+
+    for tech in [
+        "🔗 LangGraph",
+        "🧠 Groq · Llama 3.3 70B",
+        "🐘 PostgreSQL",
+        "🔍 Tavily Search",
+        "✈️ AviationStack",
+    ]:
+        st.markdown(
+            f"<div class='sidebar-chip'>{tech}</div>",
+            unsafe_allow_html=True
+        )
+
+    st.markdown(
+        "<div class='sidebar-title'>Agent Pipeline</div>",
+        unsafe_allow_html=True
+    )
+
+    for step in [
+        "① Flight Agent",
+        "② Hotel Agent",
+        "③ Itinerary Agent",
+        "④ Final Agent"
+    ]:
+        st.markdown(
+            f"<div class='sidebar-chip'>{step}</div>",
+            unsafe_allow_html=True
+        )
+
+    st.markdown(
+        "<div class='sidebar-title'>Workspace</div>",
+        unsafe_allow_html=True
+    )
+
+
+    
+
+def load_saved_trips():
+
+    save_dir = os.path.join(
+        os.path.dirname(__file__),
+        "travel_plans"
+    )
+
+    if not os.path.exists(save_dir):
+        return []
+
+    files = sorted(
+        os.listdir(save_dir),
+        reverse=True
+    )
+
+    return [
+        file for file in files
+        if file.endswith(".md")
+    ]
+
+
+
+if page == "Saved Trips":
+
+    st.markdown(
+        "<div class='sec-head'><span>📁 Saved Travel Plans</span></div>",
+        unsafe_allow_html=True,
+    )
+
+    saved_files = load_saved_trips()
+
+    if not saved_files:
+
+        st.info("No saved trips yet.")
+
+    else:
+
+        for file in saved_files:
+
+            file_path = os.path.join(
+                os.path.dirname(__file__),
+                "travel_plans",
+                file
+            )
+
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            with st.expander(f"📄 {file}"):
+
+                st.markdown(content)
+
+                st.download_button(
+                    label="⬇️ Download",
+                    data=content,
+                    file_name=file,
+                    mime="text/markdown",
+                    use_container_width=True,
+                    key=file
+                )
+
+    st.stop()
+
+
+
 
 st.markdown(
     """
@@ -606,6 +788,51 @@ def render_destination_map():
         width=None,
         height=420,
     )
+
+
+def render_hotel_cards(hotel_text):
+
+    if not hotel_text:
+        st.markdown(
+            "<div class='glass-card'>No hotels found.</div>",
+            unsafe_allow_html=True
+        )
+        return
+
+    hotel_lines = [
+        line.strip()
+        for line in hotel_text.split("\n")
+        if line.strip()
+    ]
+
+    st.markdown(
+        "<div class='hotel-grid'>",
+        unsafe_allow_html=True
+    )
+
+    for line in hotel_lines[:6]:
+
+        st.markdown(f"""
+        <div class='hotel-card'>
+
+            <div class='hotel-title'>
+                🏨 Premium Stay
+            </div>
+
+            <div>
+                <span class='hotel-badge'>⭐ AI Recommended</span>
+                <span class='hotel-badge'>💰 Best Value</span>
+            </div>
+
+            <div class='hotel-desc'>
+                {line}
+            </div>
+
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 DESTINATIONS = [
@@ -853,10 +1080,18 @@ if generate:
             st.markdown(collected["flight_results"] or "No flights found.")
             st.markdown("</div>", unsafe_allow_html=True)
 
+        
         with tabs[1]:
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.markdown(collected["hotel_results"] or "No hotels found.")
-            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown(
+            "<div class='sec-head'><span>🏨 Recommended Hotels</span></div>",
+            unsafe_allow_html=True,
+    )
+
+            render_hotel_cards(
+            collected["hotel_results"]
+    )
+
 
         with tabs[2]:
             st.markdown(
