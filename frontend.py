@@ -145,7 +145,7 @@ div[data-testid="stDownloadButton"] > button {
     color: #e8f4ff !important;
     border: 1px solid #294d7d !important;
     border-radius: 12px !important;
-    width: 100% !important;
+    width: 200% !important;
 }
 
 .stAlert {
@@ -1293,20 +1293,7 @@ if generate:
             f.write(file_content)
 
         dl_col, info_col = st.columns([1, 3])
-        with dl_col:
-            st.download_button(
-                "⬇️ Download Plan",
-                data=file_content,
-                file_name=filename,
-                mime="text/markdown",
-                use_container_width=True,
-            )
-        with info_col:
-            st.markdown(
-                f"<div class='save-bar'>📁 Auto-saved → <code>travel_plans/{filename}</code></div>",
-                unsafe_allow_html=True,
-            )
-
+        
 else:
     latest = st.session_state.get("latest_plan", _empty_collection())
 
