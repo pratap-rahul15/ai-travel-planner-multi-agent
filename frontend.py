@@ -1,6 +1,7 @@
 import os
 import re
 from datetime import datetime
+from fpdf import FPDF
 
 import folium
 from streamlit_folium import st_folium
@@ -842,6 +843,97 @@ def render_hotel_cards(hotel_text):
     )
 
 
+def clean_text(text):
+
+    if not text:
+        return ""
+
+    return (
+        text.encode("latin-1", "ignore")
+        .decode("latin-1")
+    )
+
+
+def generate_pdf_report(collected):
+
+    from fpdf import FPDF
+
+    pdf = FPDF()
+
+    pdf.set_auto_page_break(
+        auto=True,
+        margin=15
+    )
+
+    pdf.add_page()
+
+    pdf.set_font(
+        "Arial",
+        "B",
+        18
+    )
+
+    pdf.cell(
+        0,
+        12,
+        "AI Travel Copilot Report",
+        ln=True
+    )
+
+    pdf.ln(8)
+
+    sections = [
+        ("Flights", collected.get("flight_results", "")),
+        ("Hotels", collected.get("hotel_results", "")),
+        ("Itinerary", collected.get("itinerary", "")),
+        ("Final Travel Plan", collected.get("final_response", "")),
+    ]
+
+    for title, content in sections:
+
+        pdf.set_font(
+            "Arial",
+            "B",
+            14
+        )
+
+        pdf.cell(
+            0,
+            10,
+            clean_text(title),
+            ln=True
+        )
+
+        pdf.set_font(
+            "Arial",
+            "",
+            11
+        )
+
+        cleaned_content = clean_text(content)
+
+        pdf.multi_cell(
+            0,
+            8,
+            cleaned_content
+        )
+
+        pdf.ln(4)
+
+    pdf_output = pdf.output(
+        dest="S"
+    ).encode(
+        "latin-1",
+        "ignore"
+    )
+
+    return pdf_output
+
+
+
+
+
+
 DESTINATIONS = [
     ("🇯🇵 Tokyo", "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300&q=70"),
     ("🇫🇷 Paris", "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=70"),
@@ -1148,6 +1240,18 @@ if generate:
             "</div>",
             unsafe_allow_html=True
         )
+        
+        
+        pdf_data = generate_pdf_report(collected)
+
+        st.download_button(
+        label="📄 Download Travel Report PDF",
+        data=pdf_data,
+        file_name="AI_Travel_Report.pdf",
+        mime="application/pdf",
+    )
+
+
 
 
 
