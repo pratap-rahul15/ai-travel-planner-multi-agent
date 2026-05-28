@@ -1,46 +1,189 @@
 import os
-import streamlit as st
+import re
 from datetime import datetime
+
+import streamlit as st
 from langchain_core.messages import HumanMessage
 from main import app
-
+from streamlit_option_menu import option_menu
 
 st.set_page_config(
     page_title="AI Travel Booking System",
     page_icon="✈️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-st.markdown("""
+st.markdown(
+    """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 html, body, .stApp {
     font-family: 'Inter', sans-serif;
-    background-color: #080d14;
+    background:
+        radial-gradient(circle at top, rgba(34, 92, 164, 0.18), transparent 26%),
+        linear-gradient(180deg, #070b12 0%, #090f18 45%, #070b12 100%);
+    color: #e7f1fb;
 }
 
-/* ── Hero ── */
+#MainMenu, footer, header { visibility: hidden; }
+
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #080d16 0%, #0a101b 100%) !important;
+    border-right: 1px solid #162235 !important;
+}
+
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] .stMarkdown {
+    color: #a9c7e1 !important;
+}
+
+section[data-testid="stSidebar"] hr {
+    border-color: #17243a !important;
+}
+
+.sidebar-title {
+    color: #e7f1fb;
+    font-size: 1.02rem;
+    font-weight: 700;
+    margin: 1rem 0 0.5rem;
+    letter-spacing: 0.02em;
+}
+
+.sidebar-chip {
+    background: rgba(17, 26, 43, 0.92);
+    border: 1px solid #1a2d46;
+    border-radius: 10px;
+    padding: 0.52rem 0.8rem;
+    margin-bottom: 0.42rem;
+    font-size: 0.85rem;
+    color: #8fb8db;
+}
+
+input[type="text"], .stTextInput input {
+    background: #0d1624 !important;
+    border: 1px solid #1a2b42 !important;
+    border-radius: 10px !important;
+    color: #e7f1fb !important;
+}
+
+input[type="text"]:focus, .stTextInput input:focus {
+    border-color: #3a7bd5 !important;
+    box-shadow: 0 0 0 2px rgba(58,123,213,0.18) !important;
+}
+
+input[type="text"]::placeholder { color: #52708d !important; }
+
+.stTextInput label, .stTextArea label,
+.stSelectbox label, .stNumberInput label {
+    color: #7eb9f0 !important;
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+}
+
+.stTextArea textarea {
+    background: #0a1522 !important;
+    border: 1px solid #1f3048 !important;
+    border-radius: 14px !important;
+    color: #eff7ff !important;
+    font-size: 0.97rem !important;
+    resize: none !important;
+    padding: 0.9rem !important;
+}
+
+.stTextArea textarea:focus {
+    border-color: #3a7bd5 !important;
+    box-shadow: 0 0 0 2px rgba(58,123,213,0.18) !important;
+}
+
+.stTextArea textarea::placeholder { color: #577594 !important; }
+
+.stMarkdown p, .stMarkdown li, .stMarkdown td, .stMarkdown th {
+    color: #cfe2f4 !important;
+}
+
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+    color: #eff7ff !important;
+}
+
+.stMarkdown code {
+    background: #0e1a2b !important;
+    color: #8ec3ff !important;
+    padding: 0.15em 0.45em;
+    border-radius: 5px;
+}
+
+div[data-testid="stButton"] > button {
+    background: linear-gradient(135deg, #1d70c9 0%, #0f579d 55%, #0b437c 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 14px !important;
+    padding: 0.9rem 1.2rem !important;
+    font-size: 1.03rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.02em !important;
+    width: 100% !important;
+    box-shadow: 0 0 28px rgba(29,112,201,0.35), 0 8px 20px rgba(0,0,0,0.35) !important;
+    transition: all 0.25s ease !important;
+}
+
+div[data-testid="stButton"] > button:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 0 42px rgba(29,112,201,0.6), 0 10px 26px rgba(0,0,0,0.45) !important;
+}
+
+div[data-testid="stDownloadButton"] > button {
+    background: #173457 !important;
+    color: #e8f4ff !important;
+    border: 1px solid #294d7d !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+}
+
+.stAlert {
+    background: #0e1726 !important;
+    border-radius: 12px !important;
+}
+
+.stAlert p, .stAlert div { color: #e0edf8 !important; }
+
 .hero-wrapper {
     position: relative;
-    border-radius: 20px;
+    border-radius: 24px;
     overflow: hidden;
-    margin-bottom: 2rem;
-    height: 280px;
+    margin: 0.4rem 0 1.4rem;
+    min-height: 320px;
+    border: 1px solid rgba(126, 180, 231, 0.12);
+    box-shadow: 0 18px 50px rgba(0,0,0,0.35);
 }
+
 .hero-bg {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
-    filter: brightness(0.35);
+    filter: brightness(0.38) saturate(1.02);
     position: absolute;
-    top: 0; left: 0;
+    top: 0;
+    left: 0;
 }
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(135deg, rgba(7, 11, 18, 0.82), rgba(7, 11, 18, 0.3)),
+        linear-gradient(to bottom, rgba(0,0,0,0.12), rgba(0,0,0,0.58));
+}
+
 .hero-content {
     position: relative;
     z-index: 2;
-    height: 100%;
+    min-height: 320px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -48,351 +191,552 @@ html, body, .stApp {
     text-align: center;
     padding: 2rem;
 }
+
 .hero-badge {
-    background: rgba(58,123,213,0.25);
-    border: 1px solid rgba(58,123,213,0.5);
-    color: #7ab8f5 !important;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
+    background: rgba(58,123,213,0.2);
+    border: 1px solid rgba(58,123,213,0.42);
+    color: #8cc7ff !important;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
-    padding: 0.3rem 0.9rem;
-    border-radius: 20px;
+    padding: 0.35rem 0.95rem;
+    border-radius: 999px;
     margin-bottom: 0.9rem;
     display: inline-block;
+    backdrop-filter: blur(12px);
 }
+
 .hero-title {
-    font-size: 2.6rem;
-    font-weight: 700;
+    font-size: clamp(2rem, 4vw, 3.45rem);
+    font-weight: 800;
     color: #ffffff;
-    margin: 0 0 0.6rem;
-    line-height: 1.2;
+    margin: 0 0 0.55rem;
+    line-height: 1.1;
 }
+
 .hero-sub {
-    color: #94adc8;
+    color: #a8c2db;
     font-size: 1rem;
-    max-width: 560px;
+    max-width: 760px;
+    line-height: 1.7;
 }
 
-/* ── Input card ── */
-.input-card {
-    background: #0e1623;
-    border: 1px solid #1e2e44;
-    border-radius: 16px;
-    padding: 1.6rem 1.8rem;
-    margin-bottom: 1.5rem;
-}
-.input-label {
-    color: #7ab8f5;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-}
-
-/* ── Quick destinations ── */
-.dest-row {
+.hero-stats {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.9rem;
     flex-wrap: wrap;
-    margin: 0.8rem 0 1.2rem;
-}
-.dest-chip {
-    background: #111b2b;
-    border: 1px solid #1e3050;
-    color: #f7fdf4;
-    padding: 0.35rem 0.85rem;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.dest-chip:hover { background: #1a2e47; border-color: #3a7bd5; color: #fff; }
-
-/* ── Generate button ── */
-div[data-testid="stButton"] > button {
-    background: linear-gradient(135deg, #1a6bbf 0%, #0d4a8a 50%, #0a3d75 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 0.85rem 2.5rem !important;
-    font-size: 1.05rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.03em !important;
-    width: 100% !important;
-    box-shadow: 0 0 24px rgba(26,107,191,0.35), 0 4px 15px rgba(0,0,0,0.4) !important;
-    transition: all 0.3s ease !important;
-}
-div[data-testid="stButton"] > button:hover {
-    box-shadow: 0 0 40px rgba(26,107,191,0.6), 0 6px 20px rgba(0,0,0,0.5) !important;
-    transform: translateY(-2px) !important;
-    background: linear-gradient(135deg, #2278d4 0%, #1057a0 50%, #0d4a8a 100%) !important;
-}
-div[data-testid="stButton"] > button:active {
-    transform: translateY(0px) !important;
+    justify-content: center;
+    margin-top: 1.35rem;
 }
 
-/* ── Agent status cards ── */
-[data-testid="stStatusWidget"] {
-    background: #0e1a2e !important;
-    border: 1px solid #1e3050 !important;
-    border-radius: 12px !important;
+.hero-stat {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(14px);
+    border-radius: 14px;
+    min-width: 140px;
+    padding: 0.85rem 1rem;
 }
-[data-testid="stStatusWidget"] > div:first-child {
-    background: #0e1a2e !important;
-    border-radius: 12px 12px 0 0 !important;
-}
-[data-testid="stStatusWidget"] details,
-[data-testid="stStatusWidget"] details > div,
-[data-testid="stStatusWidget"] [data-testid="stVerticalBlock"] {
-    background: #0a1520 !important;
-    color: #ffffff !important;
-    padding: 0.25rem 0.5rem !important;
-}
-[data-testid="stStatusWidget"] * { color: #ffffff !important; }
-[data-testid="stStatusWidget"] a { color: #4ea8f0 !important; }
-[data-testid="stStatusWidget"] hr { border-color: #1e3050 !important; }
 
-/* ── Section headers ── */
+.hero-stat h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.12rem;
+    font-weight: 800;
+}
+
+.hero-stat p {
+    margin: 0.18rem 0 0;
+    color: #93b7d9;
+    font-size: 0.78rem;
+}
+
 .sec-head {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    margin: 2rem 0 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #1e2e44;
+    margin: 1.8rem 0 0.8rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid #1b2a40;
 }
-.sec-head span { font-size: 1.15rem; font-weight: 600; color: #e0edf8; }
 
-/* ── Metric bar ── */
+.sec-head span {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e7f1fb;
+}
+
 .metric-row {
     display: flex;
     gap: 1rem;
-    margin: 1.5rem 0;
+    margin: 1.2rem 0 1.4rem;
 }
+
 .metric-box {
     flex: 1;
-    background: #0e1623;
-    border: 1px solid #1e2e44;
-    border-radius: 12px;
-    padding: 1rem 1.2rem;
+    background: rgba(14, 22, 35, 0.92);
+    border: 1px solid #1c2c43;
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
     text-align: center;
 }
-.metric-val { font-size: 1.8rem; font-weight: 700; color: #4ea8f0; }
-.metric-lbl { font-size: 0.78rem; color: #5a7a96; margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.08em; }
 
-/* ── Final plan ── */
-.final-card {
-    background: linear-gradient(160deg, #0c1a2e 0%, #0a1520 100%);
-    border: 1px solid #1e3a5c;
-    border-left: 4px solid #3a7bd5;
-    border-radius: 14px;
-    padding: 1.8rem;
-    line-height: 1.8;
-    color: #cce0f5;
-    font-size: 0.95rem;
+.metric-val {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #54a8ff;
 }
 
-/* ── Save bar ── */
+.metric-lbl {
+    font-size: 0.78rem;
+    color: #86aed0 !important;
+    margin-top: 0.15rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.final-card {
+    background: linear-gradient(160deg, #0c1726 0%, #09111c 100%);
+    border: 1px solid #1f3857;
+    border-left: 4px solid #3a7bd5;
+    border-radius: 16px;
+    padding: 1.5rem 1.6rem;
+    line-height: 1.85;
+    color: #d5e8f8;
+    font-size: 0.96rem;
+}
+
 .save-bar {
     background: #0e1623;
-    border: 1px solid #1e2e44;
-    border-radius: 10px;
-    padding: 0.85rem 1.2rem;
-    color: #5a8ab0;
-    font-size: 0.88rem;
-    margin-top: 0.5rem;
+    border: 1px solid #1d2d45;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    color: #8cb8db !important;
+    font-size: 0.9rem;
+    margin-top: 0.55rem;
 }
 
-/* ── Sidebar ── */
-section[data-testid="stSidebar"] {
-    background: #090e18 !important;
-    border-right: 1px solid #141f30 !important;
+.save-bar code {
+    color: #8ec3ff !important;
+    background: #09111c !important;
 }
-.sidebar-chip {
-    background: #0e1a2b;
-    border: 1px solid #1a2e44;
-    border-radius: 8px;
-    padding: 0.45rem 0.75rem;
+
+.glass-card {
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.07);
+    backdrop-filter: blur(16px);
+    border-radius: 18px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+}
+
+.workflow-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem;
+    margin: 0.2rem 0 1rem;
+}
+
+.workflow-card {
+    background: rgba(14, 22, 35, 0.92);
+    border: 1px solid #1b2a40;
+    border-radius: 16px;
+    padding: 1rem 0.9rem;
+    text-align: center;
+}
+
+.workflow-icon {
+    font-size: 1.6rem;
     margin-bottom: 0.4rem;
-    font-size: 0.83rem;
-    color: #7aa8cc;
 }
-.sidebar-title { color: #e0edf8; font-size: 1rem; font-weight: 600; margin: 1rem 0 0.5rem; }
 
-/* Hide branding */
-#MainMenu, footer, header { visibility: hidden; }
+.workflow-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #e7f1fb;
+    margin: 0;
+}
 
-/* Textarea */
-.stTextArea textarea {
-    background: #0a1520 !important;
-    border: 1px solid #1e2e44 !important;
+.workflow-sub {
+    font-size: 0.76rem;
+    color: #8daecf;
+    margin: 0.25rem 0 0;
+}
+
+.nav-wrap {
+    margin: 0.1rem 0 1rem;
+}
+
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0.75rem;
+    border-bottom: 1px solid #1b2a40;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background: rgba(14, 22, 35, 0.9);
+    border-radius: 12px 12px 0 0;
+    padding: 0.7rem 1rem;
+    color: #9fc2e6;
+}
+
+.stTabs [aria-selected="true"] {
+    background: #173457 !important;
+    color: #ffffff !important;
+}
+
+.timeline-wrapper {
+    position: relative;
+    margin-top: 1rem;
+}
+
+.timeline-line {
+    position: absolute;
+    left: 18px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #2f6db5, rgba(47,109,181,0.1));
+}
+
+.timeline-card {
+    position: relative;
+    margin-left: 3rem;
+    margin-bottom: 1.5rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 18px;
+    padding: 1.2rem 1.4rem;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -2.55rem;
+    top: 1.2rem;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3a7bd5;
+    border: 3px solid #08111d;
+    box-shadow: 0 0 18px rgba(58,123,213,0.7);
+}
+
+.timeline-day {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 0.9rem;
+}
+
+.timeline-item {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 0.75rem;
+    color: #d4e6f7;
+    line-height: 1.7;
+}
+
+.timeline-icon {
+    min-width: 28px;
+    font-size: 1rem;
+}
+
+.timeline-label {
+    font-weight: 700;
+    color: #8fc4ff;
+}
+
+
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #080d16 0%, #0a101b 100%) !important;
+    border-right: 1px solid #162235 !important;
+}
+
+
+button[kind="header"] {
+    background: rgba(17, 26, 43, 0.92) !important;
+    border: 1px solid #1a2d46 !important;
     border-radius: 10px !important;
-    color: #e8f4ff !important;
-    font-size: 0.95rem !important;
-    resize: none !important;
-}
-.stTextArea textarea:focus {
-    border-color: #3a7bd5 !important;
-    box-shadow: 0 0 0 2px rgba(58,123,213,0.2) !important;
-}
-.stTextArea textarea::placeholder { color: #4a6a85 !important; }
-
-/* Text input (sidebar User ID field) */
-input[type="text"], .stTextInput input {
-    background: #0e1a2b !important;
-    border: 1px solid #1a2e44 !important;
-    border-radius: 8px !important;
-    color: #e0edf8 !important;
-}
-input[type="text"]:focus, .stTextInput input:focus {
-    border-color: #3a7bd5 !important;
-    box-shadow: 0 0 0 2px rgba(58,123,213,0.2) !important;
-}
-input[type="text"]::placeholder { color: #3a5570 !important; }
-
-/* All Streamlit labels — dark bg → light text */
-.stTextInput label, .stTextArea label,
-.stSelectbox label, .stNumberInput label {
-    color: #7ab8f5 !important;
-    font-size: 0.82rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.08em !important;
+    color: #8fc4ff !important;
+    width: 42px !important;
+    height: 42px !important;
+    top: 12px !important;
+    left: 12px !important;
+    transition: all 0.2s ease !important;
+    z-index: 9999 !important;
 }
 
-/* General markdown / paragraph text */
-.stMarkdown p, .stMarkdown li, .stMarkdown td, .stMarkdown th {
-    color: #cce0f5 !important;
-}
-.stMarkdown h1, .stMarkdown h2, .stMarkdown h3 { color: #e8f4ff !important; }
-.stMarkdown code {
-    background: #0e1a2b !important;
-    color: #7ab8f5 !important;
-    padding: 0.15em 0.4em;
-    border-radius: 4px;
+button[kind="header"]:hover {
+    background: #173457 !important;
+    color: white !important;
+    box-shadow: 0 0 18px rgba(58,123,213,0.5);
 }
 
-/* Metric labels — was #5a7a96 (too dim on dark bg) */
-.metric-lbl { color: #7aa8cc !important; }
 
-/* Save bar — was #5a8ab0 (slightly dim) */
-.save-bar { color: #8ab8d8 !important; }
-.save-bar code { color: #7ab8f5 !important; background: #0a1520 !important; }
-
-/* Streamlit warning / info / success on dark bg */
-.stAlert { background: #0e1a2b !important; border-radius: 10px !important; }
-.stAlert p, .stAlert div { color: #e0edf8 !important; }
-
-/* Sidebar text & dividers */
 section[data-testid="stSidebar"] p,
 section[data-testid="stSidebar"] span,
-section[data-testid="stSidebar"] label,
-section[data-testid="stSidebar"] .stMarkdown { color: #a0c4e0 !important; }
-section[data-testid="stSidebar"] hr { border-color: #1a2e44 !important; }
-
-/* Download button — light bg → dark text  */
-div[data-testid="stDownloadButton"] > button {
-    background: #1a3a5c !important;
-    color: #e8f4ff !important;
-    border: 1px solid #2a5080 !important;
-    border-radius: 10px !important;
-}
+section[data-testid="stSidebar"] label {
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("<div class='sidebar-title'>🌍 AI Travel Planner</div>", unsafe_allow_html=True)
+    st.markdown("<div class='sidebar-title'>🌍 AI Travel Copilot</div>", unsafe_allow_html=True)
     st.markdown("---")
 
-    thread_id = st.text_input("👤 User ID", value="Rahul Pratap Singh",
-                              help="Your session ID — keeps travel history across queries")
+    if "thread_id" not in st.session_state:
+        st.session_state["thread_id"] = "Rahul Pratap Singh"
+
+    thread_id = st.text_input(
+        "👤 User ID",
+        value=st.session_state["thread_id"],
+        help="Your session ID — keeps travel history across queries",
+    )
+    st.session_state["thread_id"] = thread_id
 
     st.markdown("<div class='sidebar-title'>Powered by</div>", unsafe_allow_html=True)
-    for tech in ["🔗 LangGraph", "🧠 Groq · LLaMA 3.3 70B", "🐘 PostgreSQL", "🔍 Tavily Search", "✈️ AviationStack"]:
+    for tech in [
+        "🔗 LangGraph",
+        "🧠 Groq · Llama 3.3 70B",
+        "🐘 PostgreSQL",
+        "🔍 Tavily Search",
+        "✈️ AviationStack",
+    ]:
         st.markdown(f"<div class='sidebar-chip'>{tech}</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='sidebar-title'>Agent Pipeline</div>", unsafe_allow_html=True)
     for step in ["① Flight Agent", "② Hotel Agent", "③ Itinerary Agent", "④ Final Agent"]:
         st.markdown(f"<div class='sidebar-chip'>{step}</div>", unsafe_allow_html=True)
 
-# ── Hero ──────────────────────────────────────────────────────────────────────
-st.markdown("""
+    st.markdown("<div class='sidebar-title'>Workspace</div>", unsafe_allow_html=True)
+    page = option_menu(
+        menu_title=None,
+        options=["Plan Trip", "Saved Trips", "Analytics", "About"],
+        icons=["airplane", "bookmark-heart", "bar-chart", "info-circle"],
+        default_index=0,
+        orientation="vertical",
+        styles={
+            "container": {"padding": "0", "background-color": "transparent"},
+            "icon": {"color": "#8fbdf2", "font-size": "16px"},
+            "nav-link": {
+                "font-size": "14px",
+                "text-align": "left",
+                "margin": "0px",
+                "--hover-color": "#122038",
+                "border-radius": "10px",
+            },
+            "nav-link-selected": {
+                "background-color": "#173457",
+                "color": "#ffffff",
+            },
+        },
+    )
+
+st.markdown(
+    """
 <div class="hero-wrapper">
     <img class="hero-bg"
-         src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1400&q=80"
+         src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1800&q=90"
          alt="airplane above clouds"/>
+    <div class="hero-overlay"></div>
     <div class="hero-content">
-        <div class="hero-badge">✦ Multi-Agent AI System</div>
-        <div class="hero-title">✈️ AI Travel Booking System</div>
-        <div class="hero-sub">Four specialized agents work together — searching flights, hotels, building an itinerary, and delivering your perfect trip plan.</div>
+        <div class="hero-badge">✦ Powered by LangGraph + Llama 3.3 70B</div>
+        <div class="hero-title">AI Travel Copilot</div>
+        <div class="hero-sub">
+            Multi-agent travel system that intelligently plans flights, hotels, and itineraries with real-time search, memory, and a polished SaaS-style experience.
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat"><h3>4</h3><p>AI Agents</p></div>
+            <div class="hero-stat"><h3>Live</h3><p>Real-time APIs</p></div>
+            <div class="hero-stat"><h3>Stateful</h3><p>PostgreSQL Memory</p></div>
+        </div>
     </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# ── Destination image strip ───────────────────────────────────────────────────
 DESTINATIONS = [
-    ("🇯🇵 Tokyo",     "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300&q=70"),
-    ("🇫🇷 Paris",     "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=70"),
-    ("🇹🇭 Bangkok",   "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=300&q=70"),
-    ("🇮🇹 Rome",      "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=300&q=70"),
-    ("🇦🇪 Dubai",     "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=300&q=70"),
+    ("🇯🇵 Tokyo", "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300&q=70"),
+    ("🇫🇷 Paris", "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=70"),
+    ("🇹🇭 Bangkok", "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=300&q=70"),
+    ("🇮🇹 Rome", "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=300&q=70"),
+    ("🇦🇪 Dubai", "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=300&q=70"),
 ]
 
 cols = st.columns(5)
 for col, (name, img_url) in zip(cols, DESTINATIONS):
     with col:
-        st.markdown(f"""
-        <div style="border-radius:10px;overflow:hidden;position:relative;height:90px;cursor:pointer;">
-            <img src="{img_url}" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.55);" />
-            <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;
-                        color:#fff;font-size:0.8rem;font-weight:600;">{name}</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div style="border-radius:14px;overflow:hidden;position:relative;height:96px;">
+                <img src="{img_url}" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.58);" />
+                <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;
+                            color:#fff;font-size:0.8rem;font-weight:700;letter-spacing:0.01em;">
+                    {name}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("<div class='sec-head'><span>🗺️ Describe your trip</span></div>", unsafe_allow_html=True)
 
-# ── Input ─────────────────────────────────────────────────────────────────────
-st.markdown("<div class='input-label'>🗺️ Describe your trip</div>", unsafe_allow_html=True)
+QUICK = [
+    "7-day Japan under ₹2L",
+    "Paris trip for 5 days",
+    "Dubai weekend trip",
+    "Bali backpacking 10 days",
+]
 
-QUICK = ["7-day Japan under ₹2L", "Paris trip for 5 days", "Dubai weekend trip", "Bali backpacking 10 days"]
-qcols = st.columns(len(QUICK))
-quick_fill = ""
+if "draft_query" not in st.session_state:
+    st.session_state["draft_query"] = ""
+
+qcols = st.columns(4)
 for qc, label in zip(qcols, QUICK):
     with qc:
-        if st.button(label, key=f"q_{label}"):
-            quick_fill = label
+        if st.button(label, key=f"quick_{label}"):
+            st.session_state["draft_query"] = label
 
 user_query = st.text_area(
     "",
-    value=quick_fill,
+    value=st.session_state.get("draft_query", ""),
     placeholder="e.g. Plan a complete 7-day Japan trip including flights, hotels and sightseeing under ₹2 lakhs",
-    height=100,
+    height=110,
     label_visibility="collapsed",
 )
 
-generate = st.button("🚀  Generate My Travel Plan", use_container_width=True)
+generate = st.button("🚀 Generate My Travel Plan", use_container_width=True)
 
-# ── Agent pipeline ────────────────────────────────────────────────────────────
 AGENT_META = {
-    "flight_agent":    ("✈️", "Flight Agent"),
-    "hotel_agent":     ("🏨", "Hotel Agent"),
-    "itinerary_agent": ("🗓️", "Itinerary Agent"),
-    "final_agent":     ("🧠", "Final Agent"),
+    "flight_agent": ("✈️", "Flight Agent", "Searching routes and timing"),
+    "hotel_agent": ("🏨", "Hotel Agent", "Finding stays and value"),
+    "itinerary_agent": ("🗓️", "Itinerary Agent", "Building day-wise plan"),
+    "final_agent": ("🧠", "Final Agent", "Composing final response"),
 }
+
+
+def _empty_collection():
+    return {
+        "flight_results": "",
+        "hotel_results": "",
+        "itinerary": "",
+        "final_response": "",
+        "llm_calls": 0,
+    }
+
+
+if "latest_plan" not in st.session_state:
+    st.session_state["latest_plan"] = _empty_collection()
+if "latest_query" not in st.session_state:
+    st.session_state["latest_query"] = ""
+
+
+def render_itinerary_timeline(itinerary_text):
+    if not itinerary_text:
+        st.markdown(
+            "<div class='glass-card'>No itinerary generated.</div>",
+            unsafe_allow_html=True,
+        )
+        return
+
+    days = re.split(r"(Day\s+\d+[:\-]?.*)", itinerary_text)
+
+    if len(days) < 2:
+        st.markdown(
+            f"<div class='glass-card'>{itinerary_text}</div>",
+            unsafe_allow_html=True,
+        )
+        return
+
+    st.markdown(
+        "<div class='timeline-wrapper'><div class='timeline-line'></div>",
+        unsafe_allow_html=True,
+    )
+
+    i = 1
+    while i < len(days):
+        day_title = days[i].strip()
+        content = days[i + 1].strip() if i + 1 < len(days) else ""
+
+        lines = [line.strip() for line in content.split("\n") if line.strip()]
+
+        st.markdown(
+            f"""
+            <div class="timeline-card">
+                <div class="timeline-dot"></div>
+                <div class="timeline-day">{day_title}</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        for line in lines:
+            icon = "📍"
+            label = ""
+            lower = line.lower()
+
+            if "morning" in lower:
+                icon = "☀️"
+                label = "Morning"
+            elif "afternoon" in lower:
+                icon = "🌆"
+                label = "Afternoon"
+            elif "evening" in lower:
+                icon = "🌙"
+                label = "Evening"
+            elif "night" in lower:
+                icon = "🌃"
+                label = "Night"
+
+            st.markdown(
+                f"""
+                <div class="timeline-item">
+                    <div class="timeline-icon">{icon}</div>
+                    <div>
+                        <span class="timeline-label">{label}</span><br>
+                        {line}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+        i += 2
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 if generate:
     if not user_query.strip():
         st.warning("Please describe your trip first.")
     else:
+        st.session_state["latest_query"] = user_query
         config = {"configurable": {"thread_id": thread_id}}
-        collected = {"flight_results": "", "hotel_results": "",
-                     "itinerary": "", "final_response": "", "llm_calls": 0}
+        collected = _empty_collection()
 
-        st.markdown("---")
-        st.markdown("<div class='sec-head'><span>🤖 Agent Pipeline — Live</span></div>",
-                    unsafe_allow_html=True)
+        st.markdown(
+            "<div class='sec-head'><span>🤖 Live Agent Pipeline</span></div>",
+            unsafe_allow_html=True,
+        )
+
+        workflow_cols = st.columns(4)
+        for col, (_, label, sub) in zip(workflow_cols, AGENT_META.values()):
+            with col:
+                st.markdown(
+                    f"""
+                    <div class="workflow-card">
+                        <div class="workflow-icon">⏳</div>
+                        <p class="workflow-title">{label}</p>
+                        <p class="workflow-sub">{sub}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
         for chunk in app.stream(
             {
@@ -407,49 +751,73 @@ if generate:
             stream_mode="updates",
         ):
             for node_name, state_update in chunk.items():
-                icon, label = AGENT_META.get(node_name, ("🔧", node_name))
-
-                with st.status(f"{icon}  {label}", state="complete", expanded=True):
+                icon, label, _ = AGENT_META.get(node_name, ("🔧", node_name, ""))
+                with st.status(f"{icon} {label}", state="complete", expanded=True):
                     if node_name == "flight_agent":
-                        text = state_update.get("flight_results", "")
-                        collected["flight_results"] = text
-                        st.markdown(text or "_No flight data returned._")
+                        collected["flight_results"] = state_update.get("flight_results", "")
+                        st.markdown(collected["flight_results"] or "_No flight data returned._")
 
                     elif node_name == "hotel_agent":
-                        text = state_update.get("hotel_results", "")
-                        collected["hotel_results"] = text
-                        st.markdown(text or "_No hotel data returned._")
+                        collected["hotel_results"] = state_update.get("hotel_results", "")
+                        st.markdown(collected["hotel_results"] or "_No hotel data returned._")
 
                     elif node_name == "itinerary_agent":
-                        text = state_update.get("itinerary", "")
-                        collected["itinerary"] = text
-                        st.markdown(text or "_No itinerary generated._")
+                        collected["itinerary"] = state_update.get("itinerary", "")
+                        st.markdown(collected["itinerary"] or "_No itinerary generated._")
 
                     elif node_name == "final_agent":
                         msgs = state_update.get("messages", [])
-                        text = msgs[-1].content if msgs else ""
-                        collected["final_response"] = text
-                        st.markdown(text or "_No final response._")
+                        collected["final_response"] = msgs[-1].content if msgs else ""
+                        st.markdown(collected["final_response"] or "_No final response._")
 
                     collected["llm_calls"] = state_update.get("llm_calls", collected["llm_calls"])
 
-        # Metrics
-        st.markdown(f"""
-        <div class="metric-row">
-            <div class="metric-box"><div class="metric-val">4</div><div class="metric-lbl">Agents Run</div></div>
-            <div class="metric-box"><div class="metric-val">{collected['llm_calls']}</div><div class="metric-lbl">LLM Calls</div></div>
-            <div class="metric-box"><div class="metric-val">✅</div><div class="metric-lbl">Status</div></div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.session_state["latest_plan"] = collected
 
-        # Final plan card
-        if collected["final_response"]:
-            st.markdown("<div class='sec-head'><span>🧠 Final Travel Plan</span></div>",
-                        unsafe_allow_html=True)
-            st.markdown(f"<div class='final-card'>{collected['final_response']}</div>",
-                        unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="metric-row">
+                <div class="metric-box">
+                    <div class="metric-val">4</div>
+                    <div class="metric-lbl">Agents Run</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-val">{collected['llm_calls']}</div>
+                    <div class="metric-lbl">LLM Calls</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-val">✅</div>
+                    <div class="metric-lbl">Pipeline Status</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-        # Save
+        tabs = st.tabs(["✈ Flights", "🏨 Hotels", "🗓 Itinerary", "🧠 Final Plan"])
+
+        with tabs[0]:
+            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+            st.markdown(collected["flight_results"] or "No flights found.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with tabs[1]:
+            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+            st.markdown(collected["hotel_results"] or "No hotels found.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with tabs[2]:
+            st.markdown(
+                "<div class='sec-head'><span>🗓️ AI Generated Travel Timeline</span></div>",
+                unsafe_allow_html=True,
+            )
+            render_itinerary_timeline(collected["itinerary"])
+
+        with tabs[3]:
+            st.markdown("<div class='final-card'>", unsafe_allow_html=True)
+            st.markdown(collected["final_response"] or "No final response.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"travel_plan_{timestamp}.md"
         save_dir = os.path.join(os.path.dirname(__file__), "travel_plans")
@@ -483,14 +851,81 @@ if generate:
 ---
 *LLM Calls: {collected['llm_calls']}*
 """
+
         with open(os.path.join(save_dir, filename), "w", encoding="utf-8") as f:
             f.write(file_content)
 
         dl_col, info_col = st.columns([1, 3])
         with dl_col:
-            st.download_button("⬇️ Download Plan", data=file_content,
-                               file_name=filename, mime="text/markdown",
-                               use_container_width=True)
+            st.download_button(
+                "⬇️ Download Plan",
+                data=file_content,
+                file_name=filename,
+                mime="text/markdown",
+                use_container_width=True,
+            )
         with info_col:
-            st.markdown(f"<div class='save-bar'>📁 Auto-saved → <code>travel_plans/{filename}</code></div>",
-                        unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='save-bar'>📁 Auto-saved → <code>travel_plans/{filename}</code></div>",
+                unsafe_allow_html=True,
+            )
+
+else:
+    latest = st.session_state.get("latest_plan", _empty_collection())
+
+    st.markdown("<div class='sec-head'><span>✨ Your workspace</span></div>", unsafe_allow_html=True)
+
+    top_cols = st.columns([1.2, 1, 1, 1])
+    with top_cols[0]:
+        st.markdown(
+            """
+            <div class="glass-card">
+                <h3 style="margin:0 0 0.35rem;color:#eff7ff;">SaaS-style multi-agent travel planning</h3>
+                <p style="margin:0;color:#9eb8d5;line-height:1.7;">
+                    Generate real-time travel suggestions using a flight agent, hotel agent, itinerary agent, and final response agent.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with top_cols[1]:
+        st.markdown(
+            """
+            <div class="glass-card" style="text-align:center;">
+                <div class="metric-val">4</div>
+                <div class="metric-lbl">Agents</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with top_cols[2]:
+        st.markdown(
+            """
+            <div class="glass-card" style="text-align:center;">
+                <div class="metric-val">Live</div>
+                <div class="metric-lbl">API Search</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with top_cols[3]:
+        st.markdown(
+            """
+            <div class="glass-card" style="text-align:center;">
+                <div class="metric-val">Stateful</div>
+                <div class="metric-lbl">Memory</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    tabs = st.tabs(["✈ Flights", "🏨 Hotels", "🗓 Itinerary", "🧠 Final Plan"])
+
+    with tabs[0]:
+        st.markdown("<div class='glass-card'>No flight data yet. Run the planner to generate it.</div>", unsafe_allow_html=True)
+    with tabs[1]:
+        st.markdown("<div class='glass-card'>No hotel data yet. Run the planner to generate it.</div>", unsafe_allow_html=True)
+    with tabs[2]:
+        st.markdown("<div class='glass-card'>No itinerary yet. Run the planner to generate it.</div>", unsafe_allow_html=True)
+    with tabs[3]:
+        st.markdown("<div class='final-card'>Your final travel plan will appear here after generation.</div>", unsafe_allow_html=True)
