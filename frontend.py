@@ -2,6 +2,9 @@ import os
 import re
 from datetime import datetime
 
+import folium
+from streamlit_folium import st_folium
+
 import streamlit as st
 from langchain_core.messages import HumanMessage
 from main import app
@@ -559,6 +562,52 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+def render_destination_map():
+
+    destination_map = folium.Map(
+        location=[20, 0],
+        zoom_start=3,
+        tiles="CartoDB dark_matter"
+    )
+
+    locations = [
+    ("India", 20.5937, 78.9629),
+    ("Tokyo", 35.6762, 139.6503),
+    ("Paris", 48.8566, 2.3522),
+    ("Dubai", 25.2048, 55.2708),
+    ("Rome", 41.9028, 12.4964),
+    ("Bangkok", 13.7563, 100.5018),
+]
+
+    for city, lat, lon in locations:
+
+        folium.Marker(
+            [lat, lon],
+            popup=f"🌍 {city}",
+            tooltip=city,
+            icon=folium.Icon(
+                color="blue",
+                icon="plane",
+                prefix="fa"
+            ),
+        ).add_to(destination_map)
+
+    st.markdown(
+        '''
+        <div class='sec-head'>
+            <span>🗺️ Popular Travel Destinations</span>
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
+
+    st_folium(
+        destination_map,
+        width=None,
+        height=420,
+    )
+
+
 DESTINATIONS = [
     ("🇯🇵 Tokyo", "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300&q=70"),
     ("🇫🇷 Paris", "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=70"),
@@ -584,6 +633,9 @@ for col, (name, img_url) in zip(cols, DESTINATIONS):
         )
 
 st.markdown("<br>", unsafe_allow_html=True)
+
+render_destination_map()
+
 st.markdown("<div class='sec-head'><span>🗺️ Describe your trip</span></div>", unsafe_allow_html=True)
 
 QUICK = [
